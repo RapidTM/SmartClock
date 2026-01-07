@@ -7,7 +7,7 @@
 #include <RotaryEncoder.h>
 
 // put function declarations here:
-int myFunction(int, int);
+void update_rotary_encoder_and_intent();
 
 // Define Pins
 #define stepperPin1 13
@@ -57,85 +57,37 @@ void setup() {
 // Library Globals
 int lastPos = 0;
 int newPos = 0;
-int condFlag = 0;
-int setUpQue = 0;
-
-// Global Variables
-int time = 0;
-int menuNum = 0;
+bool roundBool = 0;
+int intent = 0;
 
 void loop() {
-  // put your main code here, to run repeatedly:
   // Advance Motor
   stepper1.processMovement();
 
   // Check Rotary Encoder
-  encoder.tick();
-
-  newPos = encoder.getPosition();
-  int condFlag = 0;
-
-  if (newPos < 0)
-  {
-    encoder.setPosition(19);
-    condFlag = 1;
-  }
-  else if (newPos > 19)
-  {
-    encoder.setPosition(0);
-    condFlag = 1;
-  }
-
-  if (lastPos != newPos && !condFlag)
-  {
-    Serial.println(newPos);
-    stepper1.setupMoveInSteps(newPos * 103);
-    lastPos = newPos;
-    return newPos;
-  }
+  update_rotary_encoder_and_intent();
 }
 
 // put function definitions here:
-int myFunction(int x, int y) {
-  return x + y;
-}
+void update_rotary_encoder() {
+  encoder.tick();
 
-void showHalfdayMenu()
-{ // AM/PM Screen
-  bool loop1 = 0;
-  bool loop2 = 0;
+  newPos = encoder.getPosition();
+  roundBool = 0;
 
-  display.clearDisplay();
-
-  if (time < 60 * 60 * 12)
-  {
-    display.write("AM");
-    display.display();
+  if (newPos < 0) {
+    encoder.setPosition(19);
+    roundBool = 1;
   }
-  else
-  {
-    display.write("PM");
-    display.display();
+  else if (newPos > 19) {
+    encoder.setPosition(0);
+    roundBool = 1;
   }
-}
 
-void switchScreenIfNeeded()
-{
-
-  if (digitalRead(rotarySwitchPin))
-  {
-    menuNum = menuNum + 1;
-  }
-}
-
-bool encoderPositionHasChanged()
-{
-  if (lastPos != newPos && !condFlag)
-  {
-    return 1;
-  }
-  else
-  {
-    return 0;
+  if (newPos != lastPos &&!roundBool) {
+    if (newPos > lastPos) {
+      intent
+    }
+    lastPos = newPos;
   }
 }
