@@ -1,13 +1,7 @@
-#include <Arduino.h>
-#include <SPI.h>
-#include <Wire.h>
-#include <Adafruit_GFX.h>
-#include <Adafruit_SH110X.h>
-#include <TinyStepper_28BYJ_48.h>
-#include <RotaryEncoder.h>
+#include <header.h>
 
 // put function declarations here:
-void update_rotary_encoder_and_intent();
+int decide_rotary_encoder_direction();
 
 // Define Pins
 #define stepperPin1 13
@@ -22,15 +16,12 @@ void update_rotary_encoder_and_intent();
 #define displayDataPin A4
 #define displayClockPin A5
 
-
-
-
 // Setup Hardware
 Adafruit_SH1106G display = Adafruit_SH1106G(128, 64, &Wire, -1);
 TinyStepper_28BYJ_48 stepper1;
 RotaryEncoder encoder(rotaryClockPin, rotaryDataPin, RotaryEncoder::LatchMode::FOUR3);
-
-void setup() {
+void setup()
+{
   Serial.begin(9600);
 
   // Pin Setup
@@ -48,7 +39,7 @@ void setup() {
   // Stepper Setup
   stepper1.connectToPins(stepperPin1, stepperPin2, stepperPin3, stepperPin4);
   stepper1.setCurrentPositionInSteps(0);
-  stepper1.setSpeedInStepsPerSecond(1024); // (60 * SpS / 2048) to find RPM
+  stepper1.setSpeedInStepsPerSecond(64); // (60 * SpS / 2048) to find RPM
 
   // Rotary Encoder Setup
   encoder.setPosition(0);
@@ -56,38 +47,20 @@ void setup() {
 
 // Library Globals
 int lastPos = 0;
-int newPos = 0;
-bool roundBool = 0;
 int intent = 0;
+int dir = 0;
 
-void loop() {
+void loop()
+{
   // Advance Motor
   stepper1.processMovement();
 
-  // Check Rotary Encoder
-  update_rotary_encoder_and_intent();
-}
-
-// put function definitions here:
-void update_rotary_encoder() {
   encoder.tick();
-
-  newPos = encoder.getPosition();
-  roundBool = 0;
-
-  if (newPos < 0) {
-    encoder.setPosition(19);
-    roundBool = 1;
-  }
-  else if (newPos > 19) {
-    encoder.setPosition(0);
-    roundBool = 1;
+  dir = encoder.getDirection();
+  if (dir == 0)
+  {
+    return;
   }
 
-  if (newPos != lastPos &&!roundBool) {
-    if (newPos > lastPos) {
-      intent
-    }
-    lastPos = newPos;
-  }
+  stepper1.moveRelativeInSteps(dir * 64);
 }
