@@ -1,7 +1,6 @@
 #include <header.h>
 
 // put function declarations here:
-int decide_rotary_encoder_direction();
 
 // Define Pins
 #define stepperPin1 13
@@ -12,14 +11,29 @@ int decide_rotary_encoder_direction();
 #define rotaryClockPin 4
 #define rotaryDataPin 3
 #define rotarySwitchPin 2
-
 #define displayDataPin A4
 #define displayClockPin A5
+
+// Setup Constants
+#define RE_STEPS_PER_TICK 2048 * 1.875
+#define STEPS_PER_SECOND_ROTATION 64
 
 // Setup Hardware
 Adafruit_SH1106G display = Adafruit_SH1106G(128, 64, &Wire, -1);
 TinyStepper_28BYJ_48 stepper1;
 RotaryEncoder encoder(rotaryClockPin, rotaryDataPin, RotaryEncoder::LatchMode::FOUR3);
+
+// Code Globals
+int intent = 0;
+int currentIntent = 0;
+int direction = 0;
+int RE_switch_state = 0;
+
+unsigned long previousMillis1 = 0;
+const long interval1 = 1000;
+unsigned long previousMillis2 = 0;
+const long interval2 = 1000;
+
 void setup()
 {
   Serial.begin(9600);
@@ -39,28 +53,44 @@ void setup()
   // Stepper Setup
   stepper1.connectToPins(stepperPin1, stepperPin2, stepperPin3, stepperPin4);
   stepper1.setCurrentPositionInSteps(0);
-  stepper1.setSpeedInStepsPerSecond(64); // (60 * SpS / 2048) to find RPM
+  stepper1.setSpeedInStepsPerSecond(300); // (60 * SpS / 2048) to find RPM
+  stepper1.setAccelerationInStepsPerSecondPerSecond(500);
 
   // Rotary Encoder Setup
   encoder.setPosition(0);
+  encoder.tick();
+  direction = encoder.getDirection();
 }
-
-// Library Globals
-int lastPos = 0;
-int intent = 0;
-int dir = 0;
 
 void loop()
 {
-  // Advance Motor
-  stepper1.processMovement();
-
+  // Tick encoder and get intent
   encoder.tick();
-  dir = encoder.getDirection();
-  if (dir == 0)
-  {
-    return;
-  }
+  direction = encoder.getDirection();
+  intent = intent + (direction * RE_STEPS_PER_TICK);
 
-  stepper1.moveRelativeInSteps(dir * 64);
+  // Advance Motor
+  unsigned long currentMillis = millis();
+  if (currentMillis - previousMillis1 >= interval1)
+  {
+    previousMillis1 = currentMillis;
+
+    if (direction == 0 && intent != 0)
+    {
+      if (abs(intent) < STEPS_PER_SECOND_ROTATION)
+      {
+        currentIntent = intent;
+        intent = 0;
+      }
+      else
+      {
+        int sign = intent / abs(intent);
+        currentIntent = STEPS_PER_SECOND_ROTATION * sign;
+        intent = (abs(intent) - STEPS_PER_SECOND_ROTATION) * sign;
+      }
+
+      stepper1.moveRelativeInSteps(currentIntent);
+      Serial.println(intent);
+    }
+  }
 }
