@@ -1,0 +1,16 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"name": "test",
+			"path": "../test"
+		},
+		{
+			"name": "PIO Defaults",
+			"path": "../PIO Defaults"
+		}
+	],
+	"settings": {}
+}
